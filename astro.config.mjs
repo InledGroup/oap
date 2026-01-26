@@ -13,6 +13,9 @@ export default defineConfig({
     react(),
     AstroPWA({
       registerType: 'autoUpdate',
+      devOptions: {
+        enabled: true
+      },
       workbox: {
         navigateFallback: '/index.html',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,webmanifest}'],
@@ -27,12 +30,12 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/oapp.png',
+            src: '/oap.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/oapp.png',
+            src: '/oap.png',
             sizes: '512x512',
             type: 'image/png'
           }
@@ -42,6 +45,12 @@ export default defineConfig({
   ],
 
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    ssr: {
+      noExternal: ['recharts']
+    },
+    optimizeDeps: {
+      include: ['recharts']
+    }
   }
 });

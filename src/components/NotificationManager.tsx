@@ -41,7 +41,7 @@ export default function NotificationManager() {
           const goal = reminder.goalId ? goals.find(g => g.id === reminder.goalId) : null;
           const title = goal ? goal.name : (reminder.title || 'Reminder');
           const body = goal ? `Time for your goal: ${goal.name}` : 'Here is your reminder!';
-          const icon = '/icon-192.png'; // Fallback
+          const icon = '/oap.png'; 
 
           // 1. System Notification
           if (Notification.permission === 'granted') {

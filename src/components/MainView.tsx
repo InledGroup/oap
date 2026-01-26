@@ -7,20 +7,18 @@ import InstallPrompt from './InstallPrompt';
 import BottomNav from './BottomNav';
 
 export default function MainView() {
-  const [isOnboarded, setIsOnboarded] = useState<boolean | null>(null);
-  
+  const isOnboarded = useStore(onboardedStore);
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    // Check local storage directly on mount to set initial state
-    const stored = localStorage.getItem('oap_onboarded');
-    setIsOnboarded(stored === 'true');
+    setMounted(true);
   }, []);
 
   const handleEnterApp = () => {
     onboardedStore.set(true);
-    setIsOnboarded(true);
   };
 
-  if (isOnboarded === null) return null; 
+  if (!mounted) return null; // Avoid hydration mismatch on initial render
 
   if (!isOnboarded) {
     return <LandingPage onEnter={handleEnterApp} />;

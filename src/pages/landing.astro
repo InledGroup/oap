@@ -4,7 +4,7 @@ import LandingPage from '../components/LandingPage';
 ---
 
 <Layout title="oap - Objectives APP">
-  <LandingPage client:load onEnter={() => {
+  <LandingPage client:only="react" onEnter={() => {
     localStorage.setItem('oap_onboarded', 'true');
     window.location.href = '/';
   }} />

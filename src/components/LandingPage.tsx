@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, CheckCircle2, BarChart2, Bell, Layout, Smartphone, Github, Twitter, Monitor, Download } from 'lucide-react';
+import { type Goal, addGoal, goalsStore } from '../stores/goals';
+import DailyGoals from './DailyGoals';
+import { 
+  Zap, Heart, Brain, Download, Shield, Lock, EyeOff, X
+} from 'lucide-react';
 import { clsx } from 'clsx';
+import { useStore } from '@nanostores/react';
+import { t } from '../stores/i18n';
+import LanguageSelector from './LanguageSelector';
 
 interface LandingPageProps {
   onEnter: () => void;
@@ -9,15 +16,77 @@ interface LandingPageProps {
 export default function LandingPage({ onEnter }: LandingPageProps) {
   const [scrolled, setScrolled] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [showBanner, setShowBanner] = useState(false);
+  const goals = useStore(goalsStore);
+  const dict = useStore(t);
 
+  // Initialize demo data
   useEffect(() => {
+    const currentGoals = goalsStore.get();
+    if (currentGoals.length === 0) {
+      const demoGoals: Goal[] = [
+        {
+          id: 'demo-1',
+          name: 'Drink Water',
+          emoji: '💧',
+          color: '#3B82F6', 
+          type: 'number',
+          target: 8,
+          repeatDays: [0,1,2,3,4,5,6],
+          startDate: new Date().toISOString().split('T')[0],
+          tintType: 'card',
+          createdAt: Date.now()
+        },
+        {
+          id: 'demo-2',
+          name: 'Read 10 min',
+          emoji: '📖', 
+          color: '#8B5CF6', 
+          type: 'time',
+          target: 10,
+          repeatDays: [0,1,2,3,4,5,6],
+          startDate: new Date().toISOString().split('T')[0],
+          tintType: 'icon',
+          createdAt: Date.now()
+        },
+        {
+          id: 'demo-3',
+          name: 'Meditate',
+          emoji: '🧘',
+          color: '#F59E0B', 
+          type: 'check',
+          target: 1,
+          repeatDays: [0,1,2,3,4,5,6],
+          startDate: new Date().toISOString().split('T')[0],
+          tintType: 'card',
+          createdAt: Date.now()
+        }
+      ];
+      setTimeout(() => {
+         if (goalsStore.get().length === 0) {
+            goalsStore.set(demoGoals);
+         }
+      }, 100);
+    }
+
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
 
-    // Capture install prompt
+    // Check if already installed
+    const isInstalled = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    
+    // Check for global deferred prompt (captured in Layout)
+    if (!isInstalled && (window as any).deferredInstallPrompt) {
+       setInstallPrompt((window as any).deferredInstallPrompt);
+       setShowBanner(true);
+    }
+
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setInstallPrompt(e);
+      if (!isInstalled) {
+         setShowBanner(true);
+      }
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
@@ -33,226 +102,241 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
       const { outcome } = await installPrompt.userChoice;
       if (outcome === 'accepted') {
         setInstallPrompt(null);
-        // We can wait or just enter. Let's enter after install logic or dismissal.
+        setShowBanner(false);
       }
+    } else {
+       // Just enter if no install prompt (or manual install needed)
+       onEnter();
     }
-    // Proceed to app regardless of install outcome
-    onEnter();
+  };
+
+  const handleInstallClick = () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+    }
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-blue-100">
+    <div className="min-h-screen bg-white font-sans text-gray-900 overflow-x-hidden flex flex-col">
       
-      {/* Floating Header */}
+      {/* Header */}
       <header 
         className={clsx(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b",
-          scrolled ? "bg-white/80 backdrop-blur-md py-3 shadow-sm border-gray-100" : "bg-transparent py-5 border-transparent"
+          scrolled ? "bg-white border-gray-200" : "bg-transparent border-transparent py-4"
         )}
       >
-        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3 font-bold text-2xl tracking-tight text-gray-900">
-            <img src="/oapp.png" alt="oap logo" className="w-8 h-8 rounded-lg" />
-            oap
-            <span className="text-[10px] font-bold px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded uppercase tracking-widest">Beta</span>
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3 text-2xl font-extrabold text-blue-600 tracking-tighter">
+             <img src="/oap.png" alt="oap logo" className="w-10 h-10 rounded-xl shadow-sm" />
+             oap
           </div>
-          <button 
-            onClick={handleAction}
-            className="bg-gray-900 text-white px-5 py-2.5 rounded-full font-medium hover:bg-gray-800 transition-colors text-sm flex items-center gap-2"
-          >
-            {installPrompt ? <Download size={16}/> : null}
-            {installPrompt ? 'Install App' : 'Launch App'}
-          </button>
+          
+          <div className="flex items-center gap-4">
+             <LanguageSelector />
+             <button 
+               onClick={handleAction}
+               className="bg-gray-900 text-white px-6 py-2.5 rounded-2xl font-bold uppercase tracking-wide text-sm shadow-[0_4px_0_#000] active:shadow-none active:translate-y-[4px] transition-all hover:bg-gray-800 hidden sm:block"
+             >
+               {installPrompt ? dict.landing_cta_install : dict.landing_cta_start}
+             </button>
+          </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6 lg:pt-48 lg:pb-32 bg-gradient-to-b from-gray-50 to-white overflow-hidden relative">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8 relative z-10 animate-in slide-in-from-bottom-10 fade-in duration-700">
-            <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1]">
-              Achieve your <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                daily goals.
-              </span>
+      <section className="pt-32 pb-20 px-6 lg:pt-40 lg:pb-32 bg-[url('/background.svg')] bg-repeat flex-1">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+          
+          {/* Hero Content */}
+          <div className="space-y-8 z-10">
+            <h1 className="text-4xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
+              {dict.landing_title}
             </h1>
-            <p className="text-xl text-gray-600 max-w-lg leading-relaxed">
-              The simplest way to build habits, track progress, and stay consistent. No clutter, just focus.
+            <p className="text-xl text-gray-500 font-medium max-w-lg leading-relaxed">
+              {dict.landing_subtitle}
             </p>
             
-            <div className="flex items-center gap-4 text-sm font-medium text-gray-500 bg-gray-100/50 w-fit px-4 py-2 rounded-full border border-gray-200">
-               <Monitor size={16} />
-               <span>Works on iOS, Android, Windows, macOS & Linux</span>
-            </div>
-
             <div className="flex flex-col sm:flex-row gap-4">
               <button 
                 onClick={handleAction}
-                className="bg-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+                className="bg-blue-600 text-white px-10 py-4 rounded-2xl font-extrabold text-lg shadow-[0_4px_0_#1E40AF] active:shadow-none active:translate-y-[4px] transition-all w-full sm:w-auto uppercase tracking-wider hover:bg-blue-700"
               >
-                {installPrompt ? 'Install & Start' : 'Start Tracking Free'}
-                <ArrowRight size={20} />
+                {dict.landing_cta_start}
               </button>
-              <button 
-                onClick={handleAction}
-                className="px-8 py-4 rounded-full font-semibold text-gray-600 hover:bg-gray-100 transition-colors"
-              >
-                Learn more
-              </button>
-            </div>
-            <div className="pt-4 flex items-center gap-4 text-sm text-gray-500">
-              <div className="flex -space-x-2">
-                 {[1,2,3].map(i => <div key={i} className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white"/>) }
-              </div>
-              <p>Trusted by 10+ early adopters</p>
             </div>
           </div>
 
-          {/* Hero Visual */}
-          <div className="relative z-10 lg:h-[600px] flex items-center justify-center">
-             <div className="relative w-full max-w-sm transform rotate-y-6 hover:rotate-y-0 transition-transform duration-700 drop-shadow-2xl">
-                <img src="/goalsview.png" alt="App Screenshot" className="w-full h-auto rounded-2xl" />
+          {/* Phone Demo */}
+          <div className="relative z-10 flex justify-center lg:justify-end perspective-1000">
+             <div className="relative w-[320px] h-[640px] bg-black rounded-[3rem] border-8 border-gray-900 shadow-2xl overflow-hidden transform rotate-y-[-5deg] rotate-x-[5deg] hover:rotate-0 transition-transform duration-500">
+                {/* Status Bar Mock */}
+                <div className="h-6 bg-white w-full absolute top-0 z-20 flex justify-between px-6 items-center text-[10px] font-bold text-gray-800">
+                   <span>9:41</span>
+                   <div className="flex gap-1">
+                     <div className="w-4 h-2.5 bg-gray-800 rounded-sm"></div>
+                     <div className="w-0.5 h-2.5 bg-gray-800 rounded-sm"></div>
+                   </div>
+                </div>
+                {/* App Content */}
+                <div className="h-full bg-gray-50 pt-8 overflow-y-auto scrollbar-hide">
+                   <DailyGoals />
+                   <div className="px-4 pb-8 pt-4">
+                      <div className="bg-blue-50 p-4 rounded-xl text-center text-sm text-blue-600 font-bold border-2 border-blue-100 border-b-4">
+                         {dict.landing_demo_try}
+                      </div>
+                   </div>
+                </div>
+                {/* Bottom Bar Mock */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-gray-900 rounded-full z-20"></div>
              </div>
-             
-             {/* Decorative Blobs */}
-             <div className="absolute -top-10 -right-10 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl -z-10"/>
-             <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-indigo-400/20 rounded-full blur-3xl -z-10"/>
           </div>
         </div>
       </section>
 
-      {/* Feature 1: Progress */}
+      {/* Neurodiversity / Use Cases */}
       <section className="py-24 px-6 bg-white">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-          <div className="order-2 md:order-1 flex items-center justify-center relative">
-             <img src="/progress.png" alt="Progress View" className="rounded-2xl shadow-2xl max-h-[500px] object-contain" />
-          </div>
-          <div className="order-1 md:order-2 space-y-6">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-4">
-              <BarChart2 size={24} />
-            </div>
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">Visualize your success</h2>
-            <p className="text-lg text-gray-600 leading-relaxed">
-              See how far you've come with beautiful, interactive charts. Track streaks, completion rates, and daily performance at a glance.
-            </p>
-            <ul className="space-y-3">
-              {['Weekly & Monthly views', 'Completion statistics', 'Goal streaks'].map(item => (
-                <li key={item} className="flex items-center gap-3 text-gray-700">
-                  <CheckCircle2 size={18} className="text-green-500" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className="max-w-6xl mx-auto">
+           <div className="text-center mb-16 space-y-4">
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-gray-900">{dict.landing_neuro}</h2>
+              <p className="text-xl text-gray-500">{dict.landing_neuro_sub}</p>
+           </div>
+           
+           <div className="grid md:grid-cols-3 gap-8">
+              {/* TDAH */}
+              <div className="border-2 border-gray-200 border-b-[6px] rounded-3xl p-8 hover:-translate-y-2 transition-transform duration-300">
+                 <div className="w-16 h-16 bg-amber-500 rounded-2xl shadow-[0_4px_0_#B45309] flex items-center justify-center text-white mb-6">
+                    <Zap size={32} fill="currentColor" />
+                 </div>
+                 <h3 className="text-2xl font-bold mb-3 text-gray-900">{dict.landing_adhd}</h3>
+                 <p className="text-gray-500 font-medium leading-relaxed">
+                    {dict.landing_adhd_desc}
+                 </p>
+              </div>
+
+              {/* TEA */}
+              <div className="border-2 border-gray-200 border-b-[6px] rounded-3xl p-8 hover:-translate-y-2 transition-transform duration-300">
+                 <div className="w-16 h-16 bg-blue-500 rounded-2xl shadow-[0_4px_0_#1D4ED8] flex items-center justify-center text-white mb-6">
+                    <Brain size={32} />
+                 </div>
+                 <h3 className="text-2xl font-bold mb-3 text-gray-900">{dict.landing_asd}</h3>
+                 <p className="text-gray-500 font-medium leading-relaxed">
+                    {dict.landing_asd_desc}
+                 </p>
+              </div>
+
+              {/* Ansiedad */}
+              <div className="border-2 border-gray-200 border-b-[6px] rounded-3xl p-8 hover:-translate-y-2 transition-transform duration-300">
+                 <div className="w-16 h-16 bg-rose-500 rounded-2xl shadow-[0_4px_0_#BE123C] flex items-center justify-center text-white mb-6">
+                    <Heart size={32} fill="currentColor" />
+                 </div>
+                 <h3 className="text-2xl font-bold mb-3 text-gray-900">{dict.landing_anxiety}</h3>
+                 <p className="text-gray-500 font-medium leading-relaxed">
+                    {dict.landing_anxiety_desc}
+                 </p>
+              </div>
+           </div>
         </div>
       </section>
 
-      {/* Feature 2: Reminders & Config */}
-      <section className="py-24 px-6 bg-gray-50">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-          <div className="space-y-6">
-            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 mb-4">
-              <Bell size={24} />
-            </div>
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">Customize & Remind</h2>
-            <p className="text-lg text-gray-600 leading-relaxed">
-              Set smart reminders for specific goals. Customize colors, icons, and schedules to fit your lifestyle perfectly.
-            </p>
-            <ul className="space-y-3">
-              {['Custom schedules', 'Smart notifications', 'Personalized themes'].map(item => (
-                <li key={item} className="flex items-center gap-3 text-gray-700">
-                  <CheckCircle2 size={18} className="text-green-500" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="flex items-center justify-center relative">
-             <img src="/objectivesconf.png" alt="Configuration View" className="rounded-2xl shadow-2xl max-h-[500px] object-contain" />
-          </div>
-        </div>
-      </section>
+      {/* Privacy First Section */}
+      <section className="py-24 px-6 bg-gray-50 text-gray-900 border-t-2 border-gray-100">
+        <div className="max-w-4xl mx-auto text-center space-y-12">
+           <div className="inline-flex items-center gap-2 bg-white text-blue-600 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider border-2 border-gray-200 shadow-sm">
+              <Shield size={16} /> {dict.landing_privacy_title}
+           </div>
+           
+           <h2 className="text-3xl lg:text-5xl font-extrabold leading-tight text-gray-900">
+              {dict.landing_privacy_title}<br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{dict.landing_privacy_sub}</span>
+           </h2>
+           
+           <div className="grid md:grid-cols-3 gap-8 text-left mt-12">
+              <div className="bg-white p-6 rounded-3xl border-2 border-gray-200 border-b-[6px] hover:-translate-y-1 transition-transform">
+                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4 text-green-600">
+                    <Lock size={24} />
+                 </div>
+                 <h3 className="font-bold text-lg mb-2 text-gray-900">{dict.landing_offline}</h3>
+                 <p className="text-gray-500 text-sm leading-relaxed font-medium">
+                    {dict.landing_offline_desc}
+                 </p>
+              </div>
+              
+              <div className="bg-white p-6 rounded-3xl border-2 border-gray-200 border-b-[6px] hover:-translate-y-1 transition-transform">
+                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 text-blue-600">
+                    <EyeOff size={24} />
+                 </div>
+                 <h3 className="font-bold text-lg mb-2 text-gray-900">{dict.landing_no_tracking}</h3>
+                 <p className="text-gray-500 text-sm leading-relaxed font-medium">
+                    {dict.landing_no_tracking_desc}
+                 </p>
+              </div>
 
-      {/* Feature 3: PWA */}
-      <section className="py-24 px-6 bg-white">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-          <div className="order-2 md:order-1 bg-gray-900 rounded-3xl p-8 aspect-square flex items-center justify-center relative overflow-hidden text-white group">
-             <Smartphone size={120} className="text-white relative z-10 drop-shadow-2xl" />
-          </div>
-          <div className="order-1 md:order-2 space-y-6">
-             <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 mb-4">
-              <Layout size={24} />
-            </div>
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">App-like experience</h2>
-            <p className="text-lg text-gray-600 leading-relaxed">
-              Install <strong>oap</strong> directly to your home screen. It works offline, loads instantly, and feels just like a native app.
-            </p>
-             <button onClick={handleAction} className="text-blue-600 font-semibold hover:underline flex items-center gap-2">
-               {installPrompt ? 'Install now' : 'Try it now'} <ArrowRight size={16} />
-             </button>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-32 px-6 bg-gray-900 text-white text-center">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <h2 className="text-4xl lg:text-6xl font-bold tracking-tight">Ready to build better habits?</h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Join the community of goal achievers. Free, open source, and privacy-focused.
-          </p>
-          <div className="flex flex-col items-center gap-4">
-            <button 
-              onClick={handleAction}
-              className="bg-white text-gray-900 px-10 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-transform active:scale-95 shadow-xl shadow-white/10"
-            >
-               {installPrompt ? 'Install App' : 'Get Started Now'}
-            </button>
-            <span className="text-xs text-gray-500 uppercase tracking-widest font-bold">Currently in Beta</span>
-          </div>
+              <div className="bg-white p-6 rounded-3xl border-2 border-gray-200 border-b-[6px] hover:-translate-y-1 transition-transform">
+                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 text-purple-600">
+                    <Download size={24} />
+                 </div>
+                 <h3 className="font-bold text-lg mb-2 text-gray-900">{dict.landing_control}</h3>
+                 <p className="text-gray-500 text-sm leading-relaxed font-medium">
+                    {dict.landing_control_desc}
+                 </p>
+              </div>
+           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-50 border-t border-gray-200 pt-16 pb-8 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div className="col-span-2">
-              <div className="flex items-center gap-2 font-bold text-xl mb-4">
-                 <img src="/oapp.png" alt="oap logo" className="w-6 h-6 rounded" />
-                 oap
-                 <span className="text-[9px] font-bold px-1 py-0.5 bg-blue-100 text-blue-600 rounded uppercase">Beta</span>
-              </div>
-              <p className="text-gray-500 max-w-sm">
-                Objectives APP (oap) is designed to help you organize your life, one goal at a time. Privacy first, offline capable.
-              </p>
-            </div>
+      <footer className="py-12 px-6 bg-white border-t-2 border-gray-100 mt-auto">
+         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
             <div>
-              <h3 className="font-bold text-gray-900 mb-4">Product</h3>
-              <ul className="space-y-3 text-sm text-gray-600 text-left">
-                <li><button onClick={handleAction}>Features</button></li>
-                <li><button onClick={handleAction}>Pricing</button></li>
-                <li><button onClick={handleAction}>Download</button></li>
-              </ul>
+               <div className="flex items-center justify-center md:justify-start gap-3 text-2xl font-extrabold text-gray-900 tracking-tighter mb-4">
+                  <img src="/oap.png" alt="oap" className="w-8 h-8 rounded-lg" />
+                  oap
+               </div>
+               <p className="max-w-xs font-bold text-gray-400 text-xs uppercase tracking-wide">
+                  {dict.landing_footer_desc}
+               </p>
             </div>
-            <div>
-              <h3 className="font-bold text-gray-900 mb-4">Legal</h3>
-              <ul className="space-y-3 text-sm text-gray-600 text-left">
-                <li><button onClick={handleAction} className="hover:underline">Privacy Policy</button></li>
-                <li><button onClick={handleAction} className="hover:underline">Terms of Service</button></li>
-                <li><button onClick={handleAction} className="hover:underline">Cookie Policy</button></li>
-              </ul>
+            
+            <div className="flex flex-col md:flex-row items-center gap-8 text-sm font-extrabold text-gray-400">
+                <div className="flex gap-8">
+                  <a href="#" className="hover:text-blue-600 transition-colors">{dict.landing_links_github}</a>
+                  <a href="#" className="hover:text-blue-600 transition-colors">{dict.landing_links_privacy}</a>
+                  <a href="#" className="hover:text-blue-600 transition-colors">{dict.landing_links_terms}</a>
+                </div>
             </div>
-          </div>
-          <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-gray-200 text-sm text-gray-500 gap-4">
-            <p>&copy; {new Date().getFullYear()} oap. All rights reserved.</p>
-            <div className="flex gap-6">
-              <button onClick={handleAction}><Github size={20} className="hover:text-gray-900 cursor-pointer" /></button>
-              <button onClick={handleAction}><Twitter size={20} className="hover:text-gray-900 cursor-pointer" /></button>
-            </div>
+         </div>
+      </footer>
+
+      {/* Persistent Install Banner */}
+      {showBanner && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 z-[100] animate-in slide-in-from-bottom-full duration-500">
+          <div className="max-w-lg mx-auto bg-gray-900 text-white p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4 border border-gray-800">
+             <div className="flex items-center gap-3">
+                <img src="/oap.png" className="w-12 h-12 rounded-xl" alt="App Icon" />
+                <div>
+                   <h4 className="font-bold">{dict.landing_cta_install}</h4>
+                   <p className="text-xs text-gray-400">100% Offline</p>
+                </div>
+             </div>
+             <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setShowBanner(false)}
+                  className="p-2 text-gray-400 hover:text-white"
+                >
+                   <X size={20} />
+                </button>
+                <button 
+                  onClick={handleInstallClick}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg active:scale-95 transition-all"
+                >
+                  {dict.landing_cta_install}
+                </button>
+             </div>
           </div>
         </div>
-      </footer>
+      )}
+
     </div>
   );
 }

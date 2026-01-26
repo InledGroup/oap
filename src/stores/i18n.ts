@@ -1,0 +1,255 @@
+import { persistentAtom } from '@nanostores/persistent';
+import { computed } from 'nanostores';
+import { enUS, es } from 'date-fns/locale';
+
+export type Language = 'en' | 'es';
+
+const translations = {
+  en: {
+    // Landing
+    landing_title: "Achieve your daily goals.",
+    landing_subtitle: "The simplest way to build habits, track progress, and stay consistent. No clutter, just focus.",
+    landing_cta_start: "START NOW",
+    landing_cta_install: "INSTALL APP",
+    landing_demo_try: "👆 Try it! It's interactive",
+    landing_neuro: "Designed for all brains",
+    landing_neuro_sub: "Simple tools adapted to how you think.",
+    landing_adhd: "ADHD",
+    landing_adhd_desc: "Get that dopamine hit with immediate feedback. Visualize streaks and stay engaged with a clutter-free interface.",
+    landing_asd: "ASD / Autism",
+    landing_asd_desc: "Clear and predictable structure. Create visual routines to reduce anxiety and navigate daily life without surprises.",
+    landing_anxiety: "Mental Well-being",
+    landing_anxiety_desc: "Break big goals into small steps. Reduce mental load by externalizing reminders and progress.",
+    landing_privacy_title: "Your data is yours.",
+    landing_privacy_sub: "Period.",
+    landing_offline: "100% Offline",
+    landing_offline_desc: "Your habits never leave your device. No servers, no cloud, no risk.",
+    landing_no_tracking: "No Tracking",
+    landing_no_tracking_desc: "We don't use tracking cookies, invasive analytics, or sell your data.",
+    landing_control: "You are in control",
+    landing_control_desc: "Export your data whenever you want. You are free to leave and take your progress with you.",
+    landing_footer_desc: "Open source, privacy first. Built to help, not to hook.",
+    landing_links_github: "Github",
+    landing_links_privacy: "Privacy",
+    landing_links_terms: "Terms",
+    
+    // Bottom Nav
+    nav_goals: "Goals",
+    nav_progress: "Progress",
+    nav_config: "Settings",
+
+    // Daily Goals
+    daily_today: "Today",
+    daily_streak: "Daily Streak",
+    daily_day: "Day",
+    daily_days: "Days",
+    daily_no_goals: "No goals",
+    daily_enjoy: "Enjoy your free time!",
+    daily_completed: "Completed!",
+    daily_tap: "Tap to complete",
+
+    // Goal Form
+    form_new_title: "New Goal",
+    form_edit_title: "Edit Goal",
+    form_icon: "Icon",
+    form_name: "Name",
+    form_name_placeholder: "e.g. Read 30 mins",
+    form_type: "Goal Type",
+    form_type_check: "Check",
+    form_type_time: "Time",
+    form_type_number: "Amount",
+    form_target: "Daily Target",
+    form_repeat: "Repeat",
+    form_style: "Card Style",
+    form_style_icon: "Icon Only",
+    form_style_card: "Full Card",
+    form_color: "Color",
+    form_start_date: "Start Date",
+    form_end_date: "End Date",
+    form_delete: "Delete",
+    form_save: "Save",
+    form_confirm_delete: "Are you sure you want to delete this goal?",
+
+    // Reminders
+    reminders_title: "Reminders",
+    reminders_new: "New Alarm",
+    reminders_remind_me: "Remind me about",
+    reminders_custom: "Custom Message",
+    reminders_message: "Message",
+    reminders_message_placeholder: "e.g. Drink Water",
+    reminders_time: "Time",
+    reminders_save: "Save Alarm",
+    reminders_test: "Test Sound",
+    reminders_enable_title: "Enable Notifications",
+    reminders_enable_desc: "We need permission to notify you when it's time to hit your goals.",
+    reminders_allow: "Allow Notifications",
+    reminders_empty: "No reminders set",
+    reminders_daily: "DAILY",
+    reminders_on: "ON",
+    reminders_off: "OFF",
+
+    // Progress
+    progress_title: "Your Progress",
+    progress_day: "Day",
+    progress_week: "Week",
+    progress_month: "Month",
+    progress_completion: "Completion Rate",
+    progress_keep_up: "Keep it up, you're doing great!",
+    progress_activity: "Activity",
+    progress_by_goal: "By Goal",
+
+    // Config / Data
+    config_tab_goals: "Goals",
+    config_tab_reminders: "Alarms",
+    config_tab_data: "Data",
+    config_empty_goals: "It's very empty here!",
+    config_empty_desc: "Create your first habit to start tracking progress.",
+    config_backup: "Backup",
+    config_backup_desc: "Save your goals, progress, and alarms to a secure file.",
+    config_export: "Export Data (JSON)",
+    config_restore: "Restore Data",
+    config_restore_desc: "Recover your progress from a backup file.",
+    config_select_file: "Select File...",
+    config_restore_success: "Restored successfully!",
+    config_restore_error: "Error restoring",
+    config_danger: "Danger Zone",
+    config_reset: "Erase Everything",
+    config_reset_confirm_1: "ARE YOU SURE? This will delete ALL your data and cannot be undone.",
+    config_reset_confirm_2: "Really? Last chance.",
+    config_reset_done: "Data erased. Starting fresh.",
+    config_import_confirm: "Importing data will overwrite your current goals. Continue?",
+    config_import_error: "Import Error: File corrupt or invalid format.",
+
+    // General
+    days_short: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
+    days_full: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  },
+  es: {
+    // Landing
+    landing_title: "Logra tus objetivos diarios.",
+    landing_subtitle: "La forma más simple de crear hábitos, seguir tu progreso y ser constante. Sin distracciones, solo enfoque.",
+    landing_cta_start: "EMPIEZA AHORA",
+    landing_cta_install: "INSTALAR APP",
+    landing_demo_try: "👆 ¡Pruébalo! Es interactivo",
+    landing_neuro: "Diseñado para todos los cerebros",
+    landing_neuro_sub: "Herramientas simples que se adaptan a tu forma de pensar.",
+    landing_adhd: "TDAH",
+    landing_adhd_desc: "Obtén esa dosis de dopamina con feedback inmediato. Visualiza tus rachas y mantén el interés con una interfaz que no abruma.",
+    landing_asd: "TEA / Autismo",
+    landing_asd_desc: "Estructura clara y predecible. Crea rutinas visuales que reducen la ansiedad y te ayudan a navegar el día a día sin sorpresas.",
+    landing_anxiety: "Bienestar Mental",
+    landing_anxiety_desc: "Divide grandes metas en pasos pequeños. Reduce la carga mental externalizando tus recordatorios y progresos.",
+    landing_privacy_title: "Tus datos son tuyos.",
+    landing_privacy_sub: "Punto.",
+    landing_offline: "100% Offline",
+    landing_offline_desc: "Tus hábitos nunca salen de tu dispositivo. No hay servidores, no hay nube, no hay riesgo.",
+    landing_no_tracking: "Sin Rastreo",
+    landing_no_tracking_desc: "No usamos cookies de seguimiento, analíticas invasivas ni vendemos tus datos.",
+    landing_control: "Tú tienes el control",
+    landing_control_desc: "Exporta tus datos cuando quieras. Eres libre de irte y llevarte tu progreso contigo.",
+    landing_footer_desc: "Código abierto, privacidad primero. Construido para ayudar, no para enganchar.",
+    landing_links_github: "Github",
+    landing_links_privacy: "Privacidad",
+    landing_links_terms: "Términos",
+
+    // Bottom Nav
+    nav_goals: "Metas",
+    nav_progress: "Progreso",
+    nav_config: "Ajustes",
+
+    // Daily Goals
+    daily_today: "Hoy",
+    daily_streak: "Racha Diaria",
+    daily_day: "Día",
+    daily_days: "Días",
+    daily_no_goals: "Sin objetivos",
+    daily_enjoy: "¡Disfruta tu día libre!",
+    daily_completed: "¡Completado!",
+    daily_tap: "Toca para completar",
+
+    // Goal Form
+    form_new_title: "Nuevo Objetivo",
+    form_edit_title: "Editar Objetivo",
+    form_icon: "Icono",
+    form_name: "Nombre",
+    form_name_placeholder: "Ej. Leer 30 min",
+    form_type: "Tipo de Objetivo",
+    form_type_check: "Check",
+    form_type_time: "Tiempo",
+    form_type_number: "Cantidad",
+    form_target: "Meta Diaria",
+    form_repeat: "Repetir",
+    form_style: "Estilo de Tarjeta",
+    form_style_icon: "Solo Icono",
+    form_style_card: "Tarjeta Completa",
+    form_color: "Color",
+    form_start_date: "Fecha de Inicio",
+    form_end_date: "Fecha Fin",
+    form_delete: "Borrar",
+    form_save: "Guardar",
+    form_confirm_delete: "¿Estás seguro de borrar este objetivo?",
+
+    // Reminders
+    reminders_title: "Alarmas",
+    reminders_new: "Nueva Alarma",
+    reminders_remind_me: "¿Qué recordamos?",
+    reminders_custom: "Mensaje Personalizado",
+    reminders_message: "Mensaje",
+    reminders_message_placeholder: "Ej. Beber agua",
+    reminders_time: "Hora",
+    reminders_save: "Guardar Alarma",
+    reminders_test: "Probar Sonido",
+    reminders_enable_title: "Habilita Notificaciones",
+    reminders_enable_desc: "Necesitamos permiso para avisarte cuando sea hora de cumplir tus metas.",
+    reminders_allow: "Permitir Notificaciones",
+    reminders_empty: "Sin alarmas configuradas",
+    reminders_daily: "DIARIO",
+    reminders_on: "ON",
+    reminders_off: "OFF",
+
+    // Progress
+    progress_title: "Tu Progreso",
+    progress_day: "Día",
+    progress_week: "Semana",
+    progress_month: "Mes",
+    progress_completion: "Tasa de Completitud",
+    progress_keep_up: "¡Sigue así, vas genial!",
+    progress_activity: "Actividad",
+    progress_by_goal: "Por Objetivo",
+
+    // Config / Data
+    config_tab_goals: "Objetivos",
+    config_tab_reminders: "Alarmas",
+    config_tab_data: "Datos",
+    config_empty_goals: "¡Está muy vacío!",
+    config_empty_desc: "Crea tu primer hábito para empezar a rastrear tu progreso.",
+    config_backup: "Copia de Seguridad",
+    config_backup_desc: "Guarda tus objetivos, progreso y alarmas en un archivo seguro.",
+    config_export: "Exportar Datos (JSON)",
+    config_restore: "Restaurar Datos",
+    config_restore_desc: "Recupera tu progreso desde un archivo de respaldo.",
+    config_select_file: "Seleccionar Archivo...",
+    config_restore_success: "¡Restaurado con éxito!",
+    config_restore_error: "Error al restaurar",
+    config_danger: "Zona de Peligro",
+    config_reset: "Borrar Todo",
+    config_reset_confirm_1: "¿ESTÁS SEGURO? Esto borrará TODOS tus datos y no se puede deshacer.",
+    config_reset_confirm_2: "¿De verdad? Última oportunidad.",
+    config_reset_done: "Datos borrados. Empezando de cero.",
+    config_import_confirm: "Importar estos datos sobrescribirá tus objetivos actuales. ¿Continuar?",
+    config_import_error: "Error al importar: El archivo está corrupto o tiene un formato incorrecto.",
+
+    // General
+    days_short: ['D', 'L', 'M', 'X', 'J', 'V', 'S'],
+    days_full: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+  }
+};
+
+// Detect browser language
+const browserLang = typeof navigator !== 'undefined' && navigator.language.startsWith('es') ? 'es' : 'en';
+
+export const locale = persistentAtom<Language>('app_locale', browserLang);
+
+export const t = computed(locale, l => translations[l]);
+
+export const dateLocale = computed(locale, l => l === 'es' ? es : enUS);
