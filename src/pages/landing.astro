@@ -1,0 +1,11 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LandingPage from '../components/LandingPage';
+---
+
+<Layout title="oap - Objectives APP">
+  <LandingPage client:load onEnter={() => {
+    localStorage.setItem('oap_onboarded', 'true');
+    window.location.href = '/';
+  }} />
+</Layout>

@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ProgressView from '../components/ProgressView';
+import BottomNav from '../components/BottomNav';
+---
+
+<Layout title="Your Progress">
+  <main>
+    <ProgressView client:only="react" />
+  </main>
+  <BottomNav currentPath="/progress" client:idle />
+</Layout>

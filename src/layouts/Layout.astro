@@ -1,0 +1,43 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+import NotificationManager from '../components/NotificationManager';
+
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="oap - Objectives APP" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<link rel="icon" type="image/png" href="/oapp.png" />
+		<link rel="manifest" href="/manifest.webmanifest" />
+		<meta name="theme-color" content="#ffffff" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<ClientRouter />
+        <script src="/src/pwa.ts"></script>
+	</head>
+	<body class="bg-gray-50 min-h-screen pb-20">
+        <NotificationManager client:only="react" />
+		<slot />
+	</body>
+</html>
+
+<style is:global>
+	html, body {
+		overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+	}
+</style>
+
+<style is:global>
+	html, body {
+		overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+	}
+</style>

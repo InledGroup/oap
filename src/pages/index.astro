@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import MainView from '../components/MainView';
+---
+
+<Layout title="oap - Daily Goals">
+  <main>
+    <MainView client:only="react" />
+  </main>
+</Layout>

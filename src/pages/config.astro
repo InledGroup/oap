@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ConfigView from '../components/ConfigView';
+import BottomNav from '../components/BottomNav';
+---
+
+<Layout title="Manage Goals">
+  <main>
+    <ConfigView client:load />
+  </main>
+  <BottomNav currentPath="/config" client:idle />
+</Layout>
