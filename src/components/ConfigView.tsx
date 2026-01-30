@@ -137,7 +137,7 @@ export default function ConfigView() {
           <Settings size={18} strokeWidth={3} />
           {dict.config_tab_goals}
         </button>
-        <button
+        {/* <button
           onClick={() => setActiveTab('reminders')}
           className={clsx(
             "flex-1 py-3 px-4 rounded-xl border-2 border-b-4 font-bold text-sm transition-all active:border-b-2 active:translate-y-[2px] flex items-center justify-center gap-2 whitespace-nowrap",
@@ -145,10 +145,10 @@ export default function ConfigView() {
               ? "bg-amber-500 border-amber-700 text-white shadow-amber-200" 
               : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
           )}
-        >
+        > 
           <Bell size={18} strokeWidth={3} />
           {dict.config_tab_reminders}
-        </button>
+        </button> */}
         <button
           onClick={() => setActiveTab('data')}
           className={clsx(
