@@ -68,6 +68,7 @@ const translations = {
     form_end_date: "End Date",
     form_delete: "Delete",
     form_save: "Save",
+    form_reward_tokens: "Tokens Reward",
     form_confirm_delete: "Are you sure you want to delete this goal?",
 
     // Reminders
@@ -102,6 +103,8 @@ const translations = {
     config_tab_goals: "Goals",
     config_tab_reminders: "Alarms",
     config_tab_data: "Data",
+    config_tab_settings: "Settings",
+    config_tab_shop: "Shop",
     config_empty_goals: "It's very empty here!",
     config_empty_desc: "Create your first habit to start tracking progress.",
     config_backup: "Backup",
@@ -119,6 +122,28 @@ const translations = {
     config_reset_done: "Data erased. Starting fresh.",
     config_import_confirm: "Importing data will overwrite your current goals. Continue?",
     config_import_error: "Import Error: File corrupt or invalid format.",
+
+    // Gamification
+    shop_title: "Shop",
+    shop_tokens: "Tokens",
+    shop_freezers: "Streak Freezers",
+    shop_buy_freezer: "Buy Freezer",
+    shop_cost: "Cost: 50 Tokens",
+    shop_insufficient: "Insufficient tokens",
+    shop_success: "Bought!",
+    shop_use_freezer: "Use Freezer",
+    shop_freezer_used: "Streak protected for today!",
+    
+    // Settings / Streak
+    settings_streak_type: "Streak Rule",
+    settings_streak_all: "Complete Everything",
+    settings_streak_percentage: "Minimum Percentage",
+    settings_streak_min_percent: "Min % for Streak",
+    settings_low_progress_alert: "Low Progress Alert",
+    settings_low_progress_threshold: "Alert Threshold (%)",
+    settings_low_progress_msg: "Alert Message",
+    settings_global_multiplier: "Reward Multiplier",
+    settings_freezer_cost: "Freezer Cost",
 
     // General
     days_short: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
@@ -187,6 +212,7 @@ const translations = {
     form_end_date: "Fecha Fin",
     form_delete: "Borrar",
     form_save: "Guardar",
+    form_reward_tokens: "Recompensa Tokens",
     form_confirm_delete: "¿Estás seguro de borrar este objetivo?",
 
     // Reminders
@@ -221,6 +247,8 @@ const translations = {
     config_tab_goals: "Objetivos",
     config_tab_reminders: "Alarmas",
     config_tab_data: "Datos",
+    config_tab_settings: "Ajustes",
+    config_tab_shop: "Tienda",
     config_empty_goals: "¡Está muy vacío!",
     config_empty_desc: "Crea tu primer hábito para empezar a rastrear tu progreso.",
     config_backup: "Copia de Seguridad",
@@ -238,6 +266,28 @@ const translations = {
     config_reset_done: "Datos borrados. Empezando de cero.",
     config_import_confirm: "Importar estos datos sobrescribirá tus objetivos actuales. ¿Continuar?",
     config_import_error: "Error al importar: El archivo está corrupto o tiene un formato incorrecto.",
+
+    // Gamification
+    shop_title: "Tienda",
+    shop_tokens: "Tokens",
+    shop_freezers: "Congeladores de racha",
+    shop_buy_freezer: "Comprar Congelador",
+    shop_cost: "Coste: 50 Tokens",
+    shop_insufficient: "Tokens insuficientes",
+    shop_success: "¡Comprado!",
+    shop_use_freezer: "Usar Congelador",
+    shop_freezer_used: "¡Racha protegida por hoy!",
+    
+    // Settings / Streak
+    settings_streak_type: "Regla de Racha",
+    settings_streak_all: "Cumplir Todo",
+    settings_streak_percentage: "Porcentaje Mínimo",
+    settings_streak_min_percent: "Min % para racha",
+    settings_low_progress_alert: "Aviso de poco progreso",
+    settings_low_progress_threshold: "Umbral de aviso (%)",
+    settings_low_progress_msg: "Mensaje de aviso",
+    settings_global_multiplier: "Multiplicador de Recompensa",
+    settings_freezer_cost: "Coste de Congelador",
 
     // General
     days_short: ['D', 'L', 'M', 'X', 'J', 'V', 'S'],

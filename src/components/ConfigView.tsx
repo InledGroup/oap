@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { goalsStore, entriesStore, type Goal, type Entry } from '../stores/goals';
+import { goalsStore, entriesStore, type Goal, type Entry, buyStreakFreezer } from '../stores/goals';
 import { remindersStore, type Reminder } from '../stores/reminders';
+import { settingsStore, userStatsStore, updateSettings } from '../stores/appState';
 import { t } from '../stores/i18n';
 import GoalForm from './GoalForm';
 import RemindersList from './RemindersList';
 import LanguageSelector from './LanguageSelector';
-import { Plus, X, Edit2, Settings, Bell, ChevronRight, Database, Download, Upload, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, X, Edit2, Settings, Bell, ChevronRight, Database, Download, Upload, Trash2, AlertTriangle, ShoppingBag, Sliders, Coins, Snowflake, CheckSquare } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function ConfigView() {
   const goals = useStore(goalsStore);
   const dict = useStore(t);
+  const settings = useStore(settingsStore);
+  const userStats = useStore(userStatsStore);
   const [editingGoal, setEditingGoal] = useState<Goal | undefined>(undefined);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'goals' | 'reminders' | 'data'>('goals');
+  const [activeTab, setActiveTab] = useState<'goals' | 'reminders' | 'data' | 'settings' | 'shop'>('goals');
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const handleEdit = (goal: Goal) => {
@@ -37,10 +40,12 @@ export default function ConfigView() {
       goals: goalsStore.get(),
       entries: entriesStore.get(),
       reminders: remindersStore.get(),
-      version: 1,
+      settings: settingsStore.get(),
+      stats: userStatsStore.get(),
+      version: 2,
       exportedAt: new Date().toISOString()
     };
-    
+
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -60,7 +65,7 @@ export default function ConfigView() {
     reader.onload = (event) => {
       try {
         const json = JSON.parse(event.target?.result as string);
-        
+
         // Basic validation
         if (!json.goals || !json.entries) {
           throw new Error('Invalid format');
@@ -70,6 +75,8 @@ export default function ConfigView() {
           goalsStore.set(json.goals);
           entriesStore.set(json.entries);
           if (json.reminders) remindersStore.set(json.reminders);
+          if (json.settings) settingsStore.set(json.settings);
+          if (json.stats) userStatsStore.set(json.stats);
           setImportStatus('success');
           setTimeout(() => setImportStatus('idle'), 3000);
           alert(dict.config_restore_success);
@@ -122,9 +129,9 @@ export default function ConfigView() {
         <h1 className="text-3xl font-extrabold text-gray-800 tracking-tight">{dict.nav_config}</h1>
         <LanguageSelector />
       </div>
-      
+
       {/* Chunky Tabs */}
-      <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex gap-2 mb-8 overflow-x-auto pb-4 scrollbar-hide">
         <button
           onClick={() => setActiveTab('goals')}
           className={clsx(
@@ -137,18 +144,30 @@ export default function ConfigView() {
           <Settings size={18} strokeWidth={3} />
           {dict.config_tab_goals}
         </button>
-        {/* <button
-          onClick={() => setActiveTab('reminders')}
+        <button
+          onClick={() => setActiveTab('shop')}
           className={clsx(
             "flex-1 py-3 px-4 rounded-xl border-2 border-b-4 font-bold text-sm transition-all active:border-b-2 active:translate-y-[2px] flex items-center justify-center gap-2 whitespace-nowrap",
-            activeTab === 'reminders' 
+            activeTab === 'shop' 
               ? "bg-amber-500 border-amber-700 text-white shadow-amber-200" 
               : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
           )}
         > 
-          <Bell size={18} strokeWidth={3} />
-          {dict.config_tab_reminders}
-        </button> */}
+          <ShoppingBag size={18} strokeWidth={3} />
+          {dict.config_tab_shop}
+        </button>
+        <button
+          onClick={() => setActiveTab('settings')}
+          className={clsx(
+            "flex-1 py-3 px-4 rounded-xl border-2 border-b-4 font-bold text-sm transition-all active:border-b-2 active:translate-y-[2px] flex items-center justify-center gap-2 whitespace-nowrap",
+            activeTab === 'settings' 
+              ? "bg-emerald-500 border-emerald-700 text-white shadow-emerald-200" 
+              : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
+          )}
+        > 
+          <Sliders size={18} strokeWidth={3} />
+          {dict.config_tab_settings}
+        </button>
         <button
           onClick={() => setActiveTab('data')}
           className={clsx(
@@ -162,7 +181,7 @@ export default function ConfigView() {
           {dict.config_tab_data}
         </button>
       </div>
-      
+
       {activeTab === 'goals' && (
         <>
           <div className="space-y-4">
@@ -179,7 +198,7 @@ export default function ConfigView() {
                    >
                      {goal.emoji}
                    </div>
-                   
+
                    <div className="flex-1 min-w-0">
                      <h3 className="font-bold text-gray-800 text-lg truncate">{goal.name}</h3>
                      <div className="flex gap-1 mt-2">
@@ -218,11 +237,191 @@ export default function ConfigView() {
         </>
       )}
 
-      {activeTab === 'reminders' && (
-        <div className="bg-white rounded-2xl border-2 border-gray-200 border-b-4 p-4">
-          <RemindersList />
-          <div className="mt-8 text-center text-xs text-gray-400 font-medium pb-2 border-t pt-4 border-gray-100">
-             Sonidos de notificación de <a href="https://notificationsounds.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-500 hover:underline">notificationsounds.com</a>
+      {activeTab === 'shop' && (
+        <div className="space-y-6">
+          <div className="bg-amber-50 p-6 rounded-3xl border-2 border-amber-200 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-amber-400 rounded-2xl flex items-center justify-center text-white shadow-lg border-b-4 border-amber-600">
+                <Coins size={28} strokeWidth={3} />
+              </div>
+              <div>
+                <p className="text-amber-800 font-bold text-sm uppercase tracking-wider">{dict.shop_tokens}</p>
+                <p className="text-3xl font-black text-amber-900 leading-none">{userStats.tokens}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-3xl border-2 border-gray-200 border-b-4 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
+              <Snowflake size={80} strokeWidth={3} />
+            </div>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-500 border-2 border-blue-200">
+                <Snowflake size={32} strokeWidth={3} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-gray-800">{dict.shop_freezers}</h3>
+                <p className="text-gray-500 font-bold">{userStats.streakFreezers} disponibles</p>
+              </div>
+            </div>
+            <p className="text-gray-500 text-sm mb-6 font-medium">
+              Protege tu racha si un día no logras tus objetivos. Se usa automáticamente si fallas.
+            </p>
+            <button 
+              onClick={() => {
+                if (buyStreakFreezer()) {
+                  alert(dict.shop_success);
+                } else {
+                  alert(dict.shop_insufficient);
+                }
+              }}
+              className={clsx(
+                "w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 border-b-4",
+                userStats.tokens >= settings.streakFreezerCost 
+                  ? "bg-blue-600 text-white border-blue-800 active:border-b-0 active:translate-y-[4px] shadow-lg shadow-blue-100" 
+                  : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+              )}
+            >
+              <Coins size={20} />
+              {dict.shop_buy_freezer} ({settings.streakFreezerCost})
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'settings' && (
+        <div className="space-y-8">
+          <div className="space-y-4">
+            <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
+              <Bell size={20} strokeWidth={3} className="text-blue-500" />
+              {dict.settings_low_progress_alert}
+            </h3>
+            <div className="bg-white p-6 rounded-3xl border-2 border-gray-200 border-b-4 space-y-6">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-gray-700 text-sm uppercase tracking-wide">Activar Aviso</span>
+                <button 
+                  onClick={() => updateSettings(s => ({ ...s, lowProgressAlertEnabled: !s.lowProgressAlertEnabled }))}
+                  className={clsx(
+                    "w-14 h-8 rounded-full transition-colors relative",
+                    settings.lowProgressAlertEnabled ? "bg-emerald-500" : "bg-gray-200"
+                  )}
+                >
+                  <div className={clsx(
+                    "w-6 h-6 bg-white rounded-full absolute top-1 transition-all shadow-sm",
+                    settings.lowProgressAlertEnabled ? "right-1" : "left-1"
+                  )} />
+                </button>
+              </div>
+
+              {settings.lowProgressAlertEnabled && (
+                <>
+                  <div className="space-y-3">
+                    <div className="flex justify-between font-bold text-xs text-gray-400">
+                      <span className="uppercase tracking-wider">{dict.settings_low_progress_threshold}</span>
+                      <span>{settings.lowProgressThreshold}%</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="0" max="100" step="5"
+                      value={settings.lowProgressThreshold}
+                      onChange={(e) => updateSettings(s => ({ ...s, lowProgressThreshold: parseInt(e.target.value) }))}
+                      className="w-full accent-blue-500"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="font-bold text-xs text-gray-400 uppercase tracking-wider">{dict.settings_low_progress_msg}</label>
+                    <textarea 
+                      value={settings.lowProgressMessage}
+                      onChange={(e) => updateSettings(s => ({ ...s, lowProgressMessage: e.target.value }))}
+                      className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl p-4 font-bold text-gray-700 focus:border-blue-300 focus:outline-none transition-colors"
+                      rows={2}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
+              <CheckSquare size={20} strokeWidth={3} className="text-emerald-500" />
+              {dict.settings_streak_type}
+            </h3>
+            <div className="bg-white p-6 rounded-3xl border-2 border-gray-200 border-b-4 space-y-6">
+               <div className="flex gap-2">
+                 <button 
+                   onClick={() => updateSettings(s => ({ ...s, streakType: 'all' }))}
+                   className={clsx(
+                     "flex-1 py-3 px-2 rounded-xl border-2 border-b-4 font-bold text-xs transition-all active:border-b-2 active:translate-y-[2px]",
+                     settings.streakType === 'all' ? "bg-emerald-500 border-emerald-700 text-white" : "bg-gray-50 border-gray-200 text-gray-400"
+                   )}
+                 >
+                   {dict.settings_streak_all}
+                 </button>
+                 <button 
+                   onClick={() => updateSettings(s => ({ ...s, streakType: 'percentage' }))}
+                   className={clsx(
+                     "flex-1 py-3 px-2 rounded-xl border-2 border-b-4 font-bold text-xs transition-all active:border-b-2 active:translate-y-[2px]",
+                     settings.streakType === 'percentage' ? "bg-emerald-500 border-emerald-700 text-white" : "bg-gray-50 border-gray-200 text-gray-400"
+                   )}
+                 >
+                   {dict.settings_streak_percentage}
+                 </button>
+               </div>
+
+               {settings.streakType === 'percentage' && (
+                 <div className="space-y-3 pt-2">
+                    <div className="flex justify-between font-bold text-xs text-gray-400">
+                      <span className="uppercase tracking-wider">{dict.settings_streak_min_percent}</span>
+                      <span>{settings.minStreakPercentage}%</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="10" max="100" step="5"
+                      value={settings.minStreakPercentage}
+                      onChange={(e) => updateSettings(s => ({ ...s, minStreakPercentage: parseInt(e.target.value) }))}
+                      className="w-full accent-emerald-500"
+                    />
+                  </div>
+               )}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
+              <Coins size={20} strokeWidth={3} className="text-amber-500" />
+              Recompensas
+            </h3>
+            <div className="bg-white p-6 rounded-3xl border-2 border-gray-200 border-b-4 space-y-6">
+               <div className="space-y-3">
+                  <div className="flex justify-between font-bold text-xs text-gray-400">
+                    <span className="uppercase tracking-wider">{dict.settings_global_multiplier}</span>
+                    <span>x{settings.globalTokenMultiplier}</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0.5" max="5" step="0.5"
+                    value={settings.globalTokenMultiplier}
+                    onChange={(e) => updateSettings(s => ({ ...s, globalTokenMultiplier: parseFloat(e.target.value) }))}
+                    className="w-full accent-amber-500"
+                  />
+               </div>
+
+               <div className="space-y-3 pt-2 border-t border-gray-100">
+                  <div className="flex justify-between font-bold text-xs text-gray-400">
+                    <span className="uppercase tracking-wider">{dict.settings_freezer_cost}</span>
+                    <span>{settings.streakFreezerCost} tokens</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="10" max="200" step="10"
+                    value={settings.streakFreezerCost}
+                    onChange={(e) => updateSettings(s => ({ ...s, streakFreezerCost: parseInt(e.target.value) }))}
+                    className="w-full accent-amber-500"
+                  />
+               </div>
+            </div>
           </div>
         </div>
       )}

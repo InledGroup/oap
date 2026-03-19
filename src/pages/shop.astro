@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ShopView from '../components/ShopView';
+import BottomNav from '../components/BottomNav';
+---
+
+<Layout title="Shop">
+  <main>
+    <ShopView client:only="react" />
+  </main>
+  <BottomNav currentPath="/shop" client:only="react" />
+</Layout>

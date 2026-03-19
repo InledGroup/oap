@@ -1,14 +1,29 @@
 import React, { useEffect, useRef } from 'react';
 import { useStore } from '@nanostores/react';
 import { remindersStore } from '../stores/reminders';
-import { goalsStore } from '../stores/goals';
+import { goalsStore, entriesStore } from '../stores/goals';
+import { settingsStore } from '../stores/appState';
+import { format } from 'date-fns';
+import { syncDataToSW } from '../pwa';
 
 export default function NotificationManager() {
   const reminders = useStore(remindersStore);
   const goals = useStore(goalsStore);
-  const lastTriggeredRef = useRef<string | null>(null); // To prevent double firing in the same minute
+  const entries = useStore(entriesStore);
+  const settings = useStore(settingsStore);
+  const lastTriggeredRef = useRef<string | null>(null); 
+  const lastLowProgressRef = useRef<string | null>(null);
 
-  // Simple beep function using Web Audio API
+  // Sync with Service Worker for background notifications
+  useEffect(() => {
+    syncDataToSW({
+      goals,
+      entries,
+      settings,
+      reminders
+    });
+  }, [goals, entries, settings, reminders]);
+
   const playSound = () => {
     try {
       const audio = new Audio('/sound.mp3');
@@ -18,47 +33,69 @@ export default function NotificationManager() {
     }
   };
 
+  const showNotification = (title: string, body: string) => {
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body, icon: '/oap.png' });
+    }
+    playSound();
+  };
+
   useEffect(() => {
-    // Request permission on mount (or maybe we should do this on a button click to be polite? 
-    // Browsers often block auto-request. We'll leave it passive here and rely on the UI to request it.)
-    
     const checkReminders = () => {
       const now = new Date();
       const currentDay = now.getDay();
       const currentHours = now.getHours().toString().padStart(2, '0');
       const currentMinutes = now.getMinutes().toString().padStart(2, '0');
       const currentTimeStr = `${currentHours}:${currentMinutes}`;
-      
-      // Avoid re-triggering for the same minute
+      const todayStr = format(now, 'yyyy-MM-dd');
+
       if (lastTriggeredRef.current === currentTimeStr) return;
 
+      // 1. Regular Reminders
       reminders.forEach(reminder => {
         if (!reminder.enabled) return;
         if (!reminder.days.includes(currentDay)) return;
-        
+
         if (reminder.time === currentTimeStr) {
-          // Trigger!
           const goal = reminder.goalId ? goals.find(g => g.id === reminder.goalId) : null;
           const title = goal ? goal.name : (reminder.title || 'Reminder');
           const body = goal ? `Time for your goal: ${goal.name}` : 'Here is your reminder!';
-          const icon = '/oap.png'; 
-
-          // 1. System Notification
-          if (Notification.permission === 'granted') {
-            new Notification(title, { body, icon });
-          }
-
-          // 2. Sound
-          playSound();
-
+          showNotification(title, body);
           lastTriggeredRef.current = currentTimeStr;
         }
       });
+
+      // 2. Low Progress Alert (if enabled)
+      if (settings.lowProgressAlertEnabled) {
+        // Check at 18:00 and 21:00
+        const checkTimes = ['18:00', '21:00'];
+        if (checkTimes.includes(currentTimeStr) && lastLowProgressRef.current !== currentTimeStr) {
+          const scheduledGoals = goals.filter(g => {
+             if (!g.repeatDays.includes(currentDay)) return false;
+             if (todayStr.localeCompare(g.startDate) < 0) return false;
+             if (g.endDate && todayStr.localeCompare(g.endDate) > 0) return false;
+             return true;
+          });
+
+          if (scheduledGoals.length > 0) {
+            const completedCount = scheduledGoals.filter(g => {
+               const entry = entries[`${g.id}_${todayStr}`];
+               return entry && (entry.completed || entry.value >= (g.target || 1));
+            }).length;
+            const percentage = (completedCount / scheduledGoals.length) * 100;
+
+            if (percentage < settings.lowProgressThreshold) {
+              showNotification("Objetivos hoy", settings.lowProgressMessage);
+            }
+          }
+          lastLowProgressRef.current = currentTimeStr;
+        }
+      }
     };
 
-    const intervalId = setInterval(checkReminders, 10000); // Check every 10 seconds to be safe
+    const intervalId = setInterval(checkReminders, 10000); 
     return () => clearInterval(intervalId);
-  }, [reminders, goals]);
+  }, [reminders, goals, entries, settings]);
 
-  return null; // Invisible component
+  return null; 
 }

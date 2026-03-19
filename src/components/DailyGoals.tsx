@@ -1,36 +1,35 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '@nanostores/react';
-import { goalsStore, entriesStore, getStreak } from '../stores/goals';
+import { goalsStore, entriesStore, getStreak, usedFreezersStore } from '../stores/goals';
+import { userStatsStore } from '../stores/appState';
 import { t, dateLocale } from '../stores/i18n';
 import GoalCard from './GoalCard';
 import { format, addDays, subDays, isSameDay } from 'date-fns';
-import { ChevronLeft, ChevronRight, Calendar, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Star, Coins, Settings } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function DailyGoals() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const goals = useStore(goalsStore);
   const entries = useStore(entriesStore); 
+  const userStats = useStore(userStatsStore);
+  const usedFreezers = useStore(usedFreezersStore);
   const dict = useStore(t);
   const locale = useStore(dateLocale);
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
-  const dayOfWeek = selectedDate.getDay(); // 0-6 Sun-Sat
+  const dayOfWeek = selectedDate.getDay(); 
 
   const todaysGoals = useMemo(() => {
     return goals.filter(goal => {
-      // 1. Check Day of Week
       if (!goal.repeatDays.includes(dayOfWeek)) return false;
-      
-      // 2. Check Date Range
       if (dateStr.localeCompare(goal.startDate) < 0) return false;
       if (goal.endDate && dateStr.localeCompare(goal.endDate) > 0) return false;
-
       return true;
     });
   }, [goals, dayOfWeek, dateStr]);
 
-  const streak = useMemo(() => getStreak(selectedDate), [entries, goals, selectedDate]);
+  const streak = useMemo(() => getStreak(selectedDate), [entries, goals, selectedDate, usedFreezers]);
 
   const handlePrev = () => setSelectedDate(d => subDays(d, 1));
   const handleNext = () => setSelectedDate(d => addDays(d, 1));
@@ -38,7 +37,6 @@ export default function DailyGoals() {
 
   const isToday = isSameDay(selectedDate, new Date());
 
-  // Check if all goals for the selected date are completed
   const isDayCompleted = useMemo(() => {
      if (todaysGoals.length === 0) return false;
      return todaysGoals.every(g => {
@@ -52,6 +50,17 @@ export default function DailyGoals() {
   return (
     <div className="pb-28 pt-6 px-4 max-w-md mx-auto min-h-screen flex flex-col bg-white">
       
+      {/* Top Header with Tokens & Settings */}
+      <div className="flex items-center justify-between mb-6 px-2">
+         <a href="/config" className="flex items-center gap-2 bg-amber-50 border-2 border-amber-200 border-b-4 rounded-xl px-3 py-1.5 active:translate-y-[2px] active:border-b-2 transition-all">
+            <Coins size={18} className="text-amber-500" strokeWidth={3} />
+            <span className="font-black text-amber-900 text-sm">{userStats.tokens}</span>
+         </a>
+         <a href="/config" className="w-10 h-10 bg-white border-2 border-gray-200 border-b-4 rounded-xl flex items-center justify-center text-gray-400 active:translate-y-[2px] active:border-b-2 transition-all">
+            <Settings size={20} strokeWidth={3} />
+         </a>
+      </div>
+
       {/* Date Header */}
       <div className="flex items-center justify-between mb-8 sticky top-4 z-30">
         <button 

@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '@nanostores/react';
-import { goalsStore, entriesStore, type Goal } from '../stores/goals';
+import { goalsStore, entriesStore, type Goal, getStreak, useStreakFreezer, usedFreezersStore } from '../stores/goals';
+import { userStatsStore } from '../stores/appState';
 import { t, dateLocale } from '../stores/i18n';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format, subDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth } from 'date-fns';
-import { ChevronLeft, ChevronRight, Trophy, Flame } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trophy, Flame, Coins, Snowflake } from 'lucide-react';
 import { clsx } from 'clsx';
 
 type ViewMode = 'day' | 'week' | 'month';
@@ -12,10 +13,16 @@ type ViewMode = 'day' | 'week' | 'month';
 export default function ProgressView() {
   const goals = useStore(goalsStore);
   const entries = useStore(entriesStore);
+  const userStats = useStore(userStatsStore);
+  const usedFreezers = useStore(usedFreezersStore);
   const dict = useStore(t);
   const locale = useStore(dateLocale);
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [referenceDate, setReferenceDate] = useState(new Date());
+
+  const currentStreak = useMemo(() => getStreak(), [goals, entries, usedFreezers]);
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const isFreezerUsedToday = !!usedFreezers[todayStr];
 
   // Calculate date range based on view mode
   const dateRange = useMemo(() => {
@@ -33,14 +40,12 @@ export default function ProgressView() {
     return dateRange.map(date => {
       const dateStr = format(date, 'yyyy-MM-dd');
       let totalGoals = 0;
-      let dailyScore = 0; // Sum of completion ratios (0.0 to 1.0)
+      let dailyScore = 0; 
 
       goals.forEach(goal => {
-        // Check date range
         if (dateStr.localeCompare(goal.startDate) < 0) return;
         if (goal.endDate && dateStr.localeCompare(goal.endDate) > 0) return;
 
-        // Check if goal is active on this day of week
         if (goal.repeatDays.includes(date.getDay())) {
           totalGoals++;
           const entryKey = `${goal.id}_${dateStr}`;
@@ -48,15 +53,13 @@ export default function ProgressView() {
           const value = entry?.value || 0;
           const target = goal.target || 1;
 
-          // Calculate ratio for this goal
           let ratio = 0;
           if (goal.type === 'check') {
              ratio = (entry?.completed || value >= 1) ? 1 : 0;
           } else {
-             // For number/time, calculate percentage, capped at 100% (1.0)
              ratio = Math.min(1, Math.max(0, value / target));
           }
-          
+
           dailyScore += ratio;
         }
       });
@@ -73,9 +76,9 @@ export default function ProgressView() {
 
 
   const overallRate = useMemo(() => {
-    const totalPossibleScore = chartData.reduce((acc, curr) => acc + curr.total, 0); // Total number of goals scheduled
-    const totalAchievedScore = chartData.reduce((acc, curr) => acc + curr.score, 0); // Total sum of ratios
-    
+    const totalPossibleScore = chartData.reduce((acc, curr) => acc + curr.total, 0); 
+    const totalAchievedScore = chartData.reduce((acc, curr) => acc + curr.score, 0); 
+
     return totalPossibleScore > 0 ? Math.round((totalAchievedScore / totalPossibleScore) * 100) : 0;
   }, [chartData]);
 
@@ -90,10 +93,69 @@ export default function ProgressView() {
     setReferenceDate(prev => subDays(prev, -days));
   };
 
+  const handleUseFreezer = () => {
+    if (useStreakFreezer(todayStr)) {
+      alert(dict.shop_freezer_used);
+    }
+  };
+
   return (
     <div className="pb-28 pt-6 px-4 space-y-6 max-w-md mx-auto min-h-screen bg-white">
       <h1 className="text-3xl font-extrabold text-gray-800 mb-8 tracking-tight">{dict.progress_title}</h1>
-      
+
+      {/* Gamification Stats Bar */}
+      <div className="flex gap-3 mb-6">
+        <div className="flex-1 bg-amber-50 border-2 border-amber-200 border-b-4 rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center text-white shadow-lg border-b-4 border-amber-600">
+            <Coins size={24} strokeWidth={3} />
+          </div>
+          <div>
+            <p className="text-[10px] text-amber-800 font-bold uppercase tracking-wider">{dict.shop_tokens}</p>
+            <p className="text-xl font-black text-amber-900 leading-none">{userStats.tokens}</p>
+          </div>
+        </div>
+        <div className="flex-1 bg-orange-50 border-2 border-orange-200 border-b-4 rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-orange-400 rounded-xl flex items-center justify-center text-white shadow-lg border-b-4 border-orange-600">
+            <Flame size={24} strokeWidth={3} fill="currentColor" />
+          </div>
+          <div>
+            <p className="text-[10px] text-orange-800 font-bold uppercase tracking-wider">{dict.daily_streak}</p>
+            <p className="text-xl font-black text-orange-900 leading-none">{currentStreak} {dict.daily_days}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Streak Freezer Alert/Action */}
+      {userStats.streakFreezers > 0 && !isFreezerUsedToday && (
+         <div className="bg-blue-50 border-2 border-blue-200 border-b-4 rounded-3xl p-5 flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+               <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-500">
+                  <Snowflake size={24} strokeWidth={3} />
+               </div>
+               <div>
+                  <p className="text-sm font-black text-blue-800">{dict.shop_freezers} ({userStats.streakFreezers})</p>
+                  <p className="text-xs font-bold text-blue-600 opacity-80">Protege tu racha para hoy</p>
+               </div>
+            </div>
+            <button 
+               onClick={handleUseFreezer}
+               className="w-full bg-blue-500 text-white py-3 rounded-xl font-bold border-b-4 border-blue-700 active:border-b-0 active:translate-y-[4px] shadow-lg shadow-blue-200 flex items-center justify-center gap-2"
+            >
+               <Snowflake size={18} />
+               {dict.shop_use_freezer}
+            </button>
+         </div>
+      )}
+
+      {isFreezerUsedToday && (
+         <div className="bg-emerald-50 border-2 border-emerald-100 border-b-4 rounded-3xl p-5 flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-500">
+               <Snowflake size={28} strokeWidth={3} />
+            </div>
+            <p className="font-bold text-emerald-800">{dict.shop_freezer_used}</p>
+         </div>
+      )}
+
       {/* Header / Controls - Chunky Style */}
       <div className="flex items-center justify-between bg-white border-2 border-gray-200 border-b-4 rounded-2xl p-2">
         <button 
@@ -194,13 +256,11 @@ export default function ProgressView() {
       <div className="space-y-4">
         <h3 className="text-sm font-extrabold text-gray-400 uppercase tracking-wider pl-2">{dict.progress_by_goal}</h3>
         {goals.map(goal => {
-          // Calculate stats for this specific goal in the range
           let goalTotalDays = 0;
           let goalTotalScore = 0;
-          
+
           dateRange.forEach(date => {
              const dateStr = format(date, 'yyyy-MM-dd');
-             // Check date range
              if (dateStr.localeCompare(goal.startDate) < 0) return;
              if (goal.endDate && dateStr.localeCompare(goal.endDate) > 0) return;
 
@@ -210,7 +270,7 @@ export default function ProgressView() {
                 const entry = entries[entryKey];
                 const value = entry?.value || 0;
                 const target = goal.target || 1;
-                
+
                 let ratio = 0;
                  if (goal.type === 'check') {
                    ratio = (entry?.completed || value >= 1) ? 1 : 0;
@@ -221,7 +281,7 @@ export default function ProgressView() {
              }
           });
 
-          if (goalTotalDays === 0) return null; // Skip if not scheduled in this range
+          if (goalTotalDays === 0) return null; 
 
           const goalRate = Math.round((goalTotalScore / goalTotalDays) * 100);
 

@@ -13,12 +13,21 @@ export default defineConfig({
     react(),
     AstroPWA({
       registerType: 'autoUpdate',
+      strategy: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       devOptions: {
-        enabled: true
+        enabled: true,
+        type: 'module'
       },
       workbox: {
         navigateFallback: '/index.html',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,webmanifest}'],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        // Ensure the SW itself and the assets are always checked
+        alwaysRevalidate: true,
       },
       manifest: {
         name: 'oap',

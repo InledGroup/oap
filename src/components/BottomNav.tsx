@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckSquare, Settings, BarChart2 } from 'lucide-react';
+import { CheckSquare, Settings, BarChart2, ShoppingBag } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useStore } from '@nanostores/react';
 import { t } from '../stores/i18n';
@@ -10,6 +10,7 @@ const BottomNav = ({ currentPath }: { currentPath: string }) => {
   const navItems = [
     { href: '/', label: dict.nav_goals, icon: CheckSquare },
     { href: '/progress', label: dict.nav_progress, icon: BarChart2 },
+    { href: '/shop', label: dict.nav_shop || dict.config_tab_shop, icon: ShoppingBag },
     { href: '/config', label: dict.nav_config, icon: Settings },
   ];
 

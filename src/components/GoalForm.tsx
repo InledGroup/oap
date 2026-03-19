@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { addGoal, updateGoal, deleteGoal, type Goal, type GoalType } from '../stores/goals';
 import { t } from '../stores/i18n';
-import { Trash2, Save, Calendar, Check, Clock, Hash, Palette, X } from 'lucide-react';
+import { Trash2, Save, Calendar, Check, Clock, Hash, Palette, X, Coins } from 'lucide-react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
 
@@ -20,6 +20,7 @@ export default function GoalForm({ existingGoal, onClose }: GoalFormProps) {
   const [color, setColor] = useState(existingGoal?.color || COLORS[5]);
   const [type, setType] = useState<GoalType>(existingGoal?.type || 'check');
   const [target, setTarget] = useState<number>(existingGoal?.target || 1);
+  const [rewardTokens, setRewardTokens] = useState<number>(existingGoal?.rewardTokens || 1);
   const [repeatDays, setRepeatDays] = useState<number[]>(existingGoal?.repeatDays || [0, 1, 2, 3, 4, 5, 6]);
   const [tintType, setTintType] = useState<'icon' | 'card'>(existingGoal?.tintType || 'icon');
   
@@ -46,6 +47,7 @@ export default function GoalForm({ existingGoal, onClose }: GoalFormProps) {
       type,
       tintType,
       target: type === 'check' ? 1 : target,
+      rewardTokens,
       repeatDays,
       startDate,
       endDate: isInfinite ? undefined : endDate,
@@ -170,6 +172,39 @@ export default function GoalForm({ existingGoal, onClose }: GoalFormProps) {
           </div>
         </div>
       )}
+
+      {/* Reward Tokens */}
+      <div className="bg-amber-50 p-4 rounded-2xl border-2 border-amber-100">
+        <label className="block text-xs font-bold text-amber-600 uppercase tracking-wide mb-2">
+          {dict.form_reward_tokens}
+        </label>
+        <div className="flex items-center gap-4">
+            <button 
+              type="button" 
+              onClick={() => setRewardTokens(Math.max(1, rewardTokens - 1))}
+              className="w-12 h-12 rounded-xl bg-white border-2 border-b-4 border-amber-200 flex items-center justify-center text-amber-400 font-bold text-xl active:border-b-2 active:translate-y-[2px]"
+            >
+              -
+            </button>
+            <div className="flex-1 flex items-center justify-center gap-2">
+              <Coins size={20} className="text-amber-500" />
+              <input 
+                type="number" 
+                min="1"
+                value={rewardTokens}
+                onChange={e => setRewardTokens(Number(e.target.value))}
+                className="w-16 h-12 text-center text-2xl font-bold bg-transparent outline-none text-amber-800"
+              />
+            </div>
+            <button 
+              type="button" 
+              onClick={() => setRewardTokens(rewardTokens + 1)}
+              className="w-12 h-12 rounded-xl bg-white border-2 border-b-4 border-amber-200 flex items-center justify-center text-amber-500 font-bold text-xl active:border-b-2 active:translate-y-[2px]"
+            >
+              +
+            </button>
+        </div>
+      </div>
 
       {/* Repeat Days */}
       <div>
