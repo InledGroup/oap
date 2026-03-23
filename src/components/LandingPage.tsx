@@ -167,7 +167,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
                   </div>
                </div>
 
-               {/* Phone Demo */}
+               {/* Phone Demo */ }
                <div className="relative z-10 flex justify-center lg:justify-end perspective-1000">
                   <div className="relative w-[320px] h-[640px] bg-black rounded-[3rem] border-8 border-gray-900 shadow-2xl overflow-hidden transform rotate-y-[-5deg] rotate-x-[5deg] hover:rotate-0 transition-transform duration-500">
                      {/* Status Bar Mock */}
