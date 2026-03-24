@@ -20,14 +20,8 @@ export default defineConfig({
         enabled: true,
         type: 'module'
       },
-      workbox: {
-        navigateFallback: '/index.html',
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,webmanifest}'],
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
-        // Ensure the SW itself and the assets are always checked
-        alwaysRevalidate: true,
       },
       manifest: {
         name: 'oap',
